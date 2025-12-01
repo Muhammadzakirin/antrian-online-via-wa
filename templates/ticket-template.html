@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tiket Nomor Antrian</title>
+    <!-- Memuat font Poppins untuk tampilan yang lebih modern -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Menggunakan font Poppins yang sudah dimuat */
+        * {
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f2f6fc; /* Latar belakang abu-abu muda */
+            min-height: 100vh; /* Menggunakan min-height agar responsif */
+            margin: 0;
+            padding: 20px; /* Tambahkan padding untuk mobile */
+        }
+
+        .ticket {
+            width: 100%;
+            max-width: 320px; /* Batasi lebar maksimal */
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            padding: 28px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .ticket-header {
+            border-bottom: 2px dashed #ddd;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        .clinic-name {
+            font-weight: 800; /* Dibuat lebih tebal */
+            font-size: 22px;
+            color: #2c3e50;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .ticket-body h1 {
+            font-size: 72px; /* Dibuat lebih besar */
+            color: #1a73e8; /* Warna biru Google yang cerah */
+            margin: 12px 0;
+            font-weight: 800;
+        }
+
+        .ticket-body p {
+            margin: 0 0 4px 0;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        /* Gaya untuk data pasien */
+        .ticket-body strong {
+            color: #333;
+            font-weight: 700;
+        }
+
+        .ticket-footer {
+            border-top: 2px dashed #ddd;
+            margin-top: 18px;
+            padding-top: 10px;
+            font-size: 13px;
+            color: #777;
+        }
+
+        .ticket-footer small {
+            display: block;
+            margin-top: 6px;
+        }
+
+        /* Animasi sederhana */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="ticket">
+        <div class="ticket-header">
+            <h3 class="clinic-name">PUSKESMAS SIMPANG EMPAT</h3>
+        </div>
+
+        <div class="ticket-body">
+            <p>Nomor Antrian Anda</p>
+            <h1><%= nomor %></h1> 
+            <!-- Data Pasien -->
+            <p>Nama Pasien: <strong><%= nama %></strong></p>
+            <p>Jenis Kelamin: <strong><%= jenis_kelamin %></strong></p>
+            <p>Kepesertaan: <strong><%= kepesertaan %></strong></p>
+            <p>Tanggal: <%= tanggal %></p>
+        </div>
+
+        <div class="ticket-footer">
+            <p>Harap datang 10 menit sebelum dipanggil 🙏</p>
+            <small>Terima kasih telah menggunakan layanan kami</small>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Petugas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: "Inter", sans-serif;
+            padding: 0;
+            margin: 0;
+        }
+        
+        #slideshow-container {
+            position: fixed; 
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            transition: background-image 1s ease-in-out;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        /* 🚨 PERBAIKAN AKHIR: Wrapper untuk menahan konten di tengah dan memungkinkan scroll */
+        .form-scrolling-wrapper {
+            /* Memaksa tinggi minimal 100% viewport */
+            min-height: 100vh; 
+            padding: 30px 0; 
+            display: flex;
+            align-items: center; 
+            justify-content: center;
+            /* Z-index harus lebih tinggi dari overlay transparan */
+            z-index: 20; 
+            position: relative; 
+            /* Hapus background-color agar transparan, mengandalkan overlay di bawahnya */
+        }
+
+        /* Form di tengah (z-index harus paling tinggi) */
+        .form-content-box {
+            background-color: white; /* Tetap putih solid */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+            border-radius: 12px; 
+            /* Z-index tertinggi untuk memastikan form selalu di atas */
+            z-index: 30; 
+        }
+        
+        /* 🚨 KODE BARU: Overlay Transparan Penuh (Fixed) */
+        #transparent-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.9); /* Putih 90% Opasitas */
+            z-index: 10;
+        }
+    </style>
+</head>
+<body id="full-screen-bg">
+
+    <div id="slideshow-container"></div>
+    
+    <div id="transparent-overlay"></div> 
+    
+    <div class="form-scrolling-wrapper w-full">
+        
+        <div class="form-content-box p-10 w-full max-w-sm border border-gray-100">
+
+            <div class="flex flex-col items-center mb-6">
+                <img src="./assets/logo.png" alt="Logo Antrian Online" class="w-20 h-20 mb-2">
+                <h1 class="text-2xl font-extrabold text-green-700">Antrian Online</h1>
+                <p class="text-sm text-gray-500 mt-1">Daftar Akun Petugas</p>
+            </div>
+
+            <div id="errorBox"
+                class="hidden bg-red-100 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+            </div>
+
+            <div class="mb-4">
+                <label class="block mb-1 text-gray-700 font-medium text-sm">Nama Lengkap</label>
+                <input id="name" type="text"
+                    class="w-full border border-gray-300 rounded-xl px-3 py-2.5 
+                           focus:ring-green-500 focus:border-green-500 outline-none transition">
+            </div>
+
+            <div class="mb-4">
+                <label class="block mb-1 text-gray-700 font-medium text-sm">Email</label>
+                <input id="email" type="email"
+                    class="w-full border border-gray-300 rounded-xl px-3 py-2.5 
+                           focus:ring-green-500 focus:border-green-500 outline-none transition">
+            </div>
+
+            <div class="mb-6">
+                <label class="block mb-1 text-gray-700 font-medium text-sm">Password</label>
+                <input id="password" type="password"
+                    class="w-full border border-gray-300 rounded-xl px-3 py-2.5 
+                           focus:ring-green-500 focus:border-green-500 outline-none transition">
+            </div>
+
+            <button id="registerBtn"
+                class="w-full bg-green-600 text-white py-3 rounded-xl 
+                       font-semibold shadow-md shadow-green-300 hover:bg-green-700 transition duration-150">
+                Daftar
+            </button>
+
+            <p class="text-center text-gray-600 text-sm mt-4">
+                Sudah punya akun?
+                <a href="login.html" class="text-blue-600 hover:underline font-medium">Login</a>
+            </p>
+
+        </div>
+    </div>
+
+    <script>
+        const BACKGROUND_IMAGES = [
+            './assets/data_pasien.jpg', 
+            './assets/puskesmas.jpg', 
+            './assets/gambar_3.jpg' 
+        ];
+
+        const BACKGROUND_INTERVAL = 5000; // Ganti gambar setiap 5 detik
+        let currentImageIndex = 0;
+
+        /**
+         * Mengubah gambar latar belakang (background-image)
+         */
+        function changeBackground() {
+            const slideshowElement = document.getElementById('slideshow-container');
+            if (!slideshowElement) return;
+
+            // ✅ Atur background image
+            slideshowElement.style.backgroundImage = `url('${BACKGROUND_IMAGES[currentImageIndex]}')`;
+
+            // Pindah ke gambar berikutnya
+            currentImageIndex = (currentImageIndex + 1) % BACKGROUND_IMAGES.length;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Panggil fungsi segera saat dimuat
+            changeBackground(); 
+
+            // Atur pewaktu untuk mengubah gambar secara berkala
+            setInterval(changeBackground, BACKGROUND_INTERVAL);
+        });
+    </script>
+    <script type="module" src="../src/auth/register.js"></script>
+</body>
+</html>

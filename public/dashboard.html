@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Antrian Petugas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="./site.webmanifest">
+    <link rel="icon" href="./favicon.ico" sizes="any">
+
+    <style>
+        /* CSS LAYOUT & FIX OVERFLOW */
+        html {
+            overflow-x: hidden;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f9; 
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        #main-header {
+            background-color: #2ecc71; 
+            color: white;
+            z-index: 60; 
+            position: sticky;
+            top: 0;
+            width: 100%; 
+            box-sizing: border-box; 
+        }
+        
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+            z-index: 50;
+            width: 16rem; 
+            position: fixed; 
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background-color: #27ae60; 
+            color: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+            transform: translateX(-100%); 
+        }
+        
+        .sidebar-visible {
+            transform: translateX(0) !important;
+        }
+        
+        #overlay {
+            z-index: 45; 
+        }
+        
+        .nav-item.active {
+            background-color: rgba(255, 255, 255, 0.2); 
+            border-radius: 0.25rem;
+        }
+        
+        .nav-item {
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+        
+        #content-area {
+            background-color: white; 
+            border: 1px solid #ddd; 
+            margin: 1.5rem;
+            min-height: 80vh;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-sizing: border-box; 
+        }
+
+        .content-shift {
+            transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+            width: 100%; 
+        }
+
+        /* MEDIA QUERY UNTUK LAYAR DESKTOP (lg:) */
+        @media (min-width: 1024px) {
+            body {
+                flex-direction: row; 
+            }
+            
+            #overlay {
+                display: none !important; 
+            }
+
+            /* FIX OVERFLOW */
+            .content-shift.sidebar-visible {
+                margin-left: 16rem; 
+                width: calc(100% - 16rem); 
+                max-width: calc(100% - 16rem); 
+            }
+        }
+    </style>
+    </head>
+<body class="lg:flex"> 
+
+    <script>
+        const USER_STORAGE_KEY = 'puskesmas_user';
+        const user = localStorage.getItem(USER_STORAGE_KEY);
+
+        // Authentication Guard
+        if (!user) {
+            alert('Akses ditolak! Anda harus login terlebih dahulu.');
+            window.location.href = 'login.html'; 
+        } else {
+            try {
+                JSON.parse(user);
+            } catch (e) {
+                console.error("Data sesi rusak. Memaksa logout.");
+                localStorage.removeItem(USER_STORAGE_KEY);
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-45 hidden" onclick="toggleSidebar()"></div>
+
+    <aside id="sidebar" class="w-64 p-4 flex flex-col space-y-2">
+        
+        <div class="mb-6 border-b border-white border-opacity-30 pb-4">
+            <div class="flex items-center space-x-3 text-white">
+                <img src="./assets/logo_sehat.png" alt="Logo" class="h-11 w-11"> 
+                <div>
+                    <div class="text-xl font-extrabold leading-tight">E-Queue</div>
+                    <div class="text-lg font-bold leading-tight">Dashboard</div>
+                </div>
+            </div>
+        </div>
+        <div id="nav-list" class="flex flex-col space-y-1 text-white font-medium">
+            <div id="Dashboard" class="nav-item active flex items-center p-3 hover:bg-white hover:bg-opacity-10" onclick="switchView('Dashboard')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l-2-2m2 2l-2-2m2 2v10a1 1 0 001 1h3m-9-9v10a1 1 0 001 1h2a1 1 0 001-1v-10m-3 0V4m-3 6h6" /></svg>
+                Dashboard
+            </div>
+            <div id="Antrian" class="nav-item flex items-center p-3 hover:bg-white hover:bg-opacity-10" onclick="switchView('Antrian')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
+                Antrian
+            </div>
+            <div id="DataPasien" class="nav-item flex items-center p-3 hover:bg-white hover:bg-opacity-10" onclick="switchView('DataPasien')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-5a2 2 0 01-2-2H4a2 2 0 01-2-2v5a2 2 0 002 2h3m8-3v3m0 0H9m5 0h2m-6 0h2m-2-3V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2h7" /></svg>
+                Data Pasien
+            </div>
+            <div id="DisplayAntrian" class="nav-item flex items-center p-3 hover:bg-white hover:bg-opacity-10" onclick="switchView('DisplayAntrian')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.55-4.55a2 2 0 012.9 2.9L18.45 13m-2.9-2.9a2 2 0 01-2.9 2.9L10 18.45M4 6h16M4 12h16m-7 6h7" /></svg>
+                Display Antrian
+            </div>
+            <div id="Laporan" class="nav-item flex items-center p-3 hover:bg-white hover:bg-opacity-10" onclick="switchView('Laporan')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0h6m-6 0H5" /></svg>
+                Laporan
+            </div>
+            <div id="Pengaturan" class="nav-item flex items-center p-3 hover:bg-white hover:bg-opacity-10" onclick="switchView('Pengaturan')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.941 3.31 1.042 2.158 2.573a1.724 1.724 0 00-.034 2.158c1.543 1.531-.234 3.528-2.158 2.573a1.724 1.724 0 00-1.066 2.573c.941 1.543-1.042 3.31-2.573 2.158a1.724 1.724 0 00-2.158.034c-1.531 1.543-3.528-.234-2.573-2.158a1.724 1.724 0 00-2.573-1.066c-1.543.941-3.31-1.042-2.158-2.573a1.724 1.724 0 00-.034-2.158c-1.543-1.531.234-3.528 2.158-2.573a1.724 1.724 0 001.066-2.573z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                Pengaturan
+            </div>
+        </div>
+
+        <div class="mt-auto py-3 pb-4 border-t border-white border-opacity-30"> 
+            <button id="logout-button-sidebar-mobile" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition duration-150" onclick="handleLogout()">
+                Keluar
+            </button>
+
+            <div class="text-[10px] text-white text-opacity-70 mt-10 text-center"> 
+                Powered by: <br>
+                UNIVERSITAS WIDYA HUSADA SEMARANG
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col overflow-hidden content-shift">
+        
+        <header id="main-header" class="p-4 flex justify-between items-center shadow-lg">
+            
+            <div class="flex items-center space-x-4">
+                <button class="text-white p-1 rounded hover:bg-white hover:bg-opacity-10 z-60" onclick="toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+                
+                <span id="system-tagline-display" class="text-sm font-semibold hidden sm:block">
+                    Selamat datang di sistem antrian Puskesmas
+                </span>
+            </div>
+            
+            <div class="flex items-center space-x-4 relative">
+                
+                <a href="https://web.whatsapp.com/" target="_blank" 
+                   class="flex items-center text-white transition duration-150 shadow-md"
+                   title="Akses WhatsApp Web">
+                    
+                    <img src="./assets/logo-wa.png" alt="WhatsApp" class="w-8 h-8">
+                    
+                </a>
+                
+                <button id="profile-menu-button" 
+                    class="flex items-center p-2 rounded-full text-white hover:bg-white hover:bg-opacity-10 focus:outline-none" 
+                    onclick="showProfileDetail(event)">
+                    
+                    <img id="header-profile-photo" 
+                        src="./assets/karakter/karakter_1.jpg" 
+                        alt="P"
+                        class="w-7 h-7 rounded-full object-cover mr-2 border border-white">
+                    <span class="mr-2 hidden sm:inline text-sm font-semibold" id="user-display-name">Petugas</span>
+                    <span class="h-2 w-2 bg-white rounded-full ml-1"></span> 
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-6">
+            <div id="content-area" class="w-full">
+                <div class="mb-6 pb-2 border-b">
+                    <h1 class="text-3xl font-bold text-gray-800" id="main-title">Dashboard</h1>
+                    <p class="text-gray-500 text-sm mt-1">Selamat datang di website Panel Antrian Puskesmas</p>
+                    <span id="current-date-header" class="text-sm font-medium text-gray-600 hidden"></span>
+                </div>
+                
+                <div id="content-container" class="min-h-[50vh]">
+                    <div class="p-6 text-center text-gray-500">
+                        Memuat aplikasi...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="modal-container">
+        
+        <div id="profile-detail-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-[100] p-4">
+            <div class="rounded-xl shadow-2xl w-full max-w-sm overflow-hidden" 
+                style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);">
+                
+                <div class="p-6 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-white">Detail Profile</h3>
+                    <button onclick="closeProfileDetailModal()" class="text-white hover:text-gray-200 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="p-6 flex flex-col items-center">
+                    <div class="relative mb-4">
+                        <img id="profile-photo" 
+                            src="./assets/karakter/karakter_1.jpg" 
+                            alt="Foto Profil" 
+                            class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg">
+                    </div>
+                    
+                    <p id="profile-detail-name" class="text-2xl font-extrabold text-white text-center mb-2"></p>
+                    
+                    <p id="profile-detail-email" class="text-sm text-white text-opacity-80 text-center"></p>
+                    
+                    <button onclick="showEditProfileModal(event)" 
+                        class="mt-4 px-5 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-medium rounded-lg transition duration-150 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit Profil & Foto
+                    </button>
+                </div>
+
+                <div class="p-4 flex space-x-3">
+                    <button onclick="showChangePasswordModal(event)" 
+                        class="flex-1 px-4 py-3 bg-white hover:bg-gray-100 text-green-700 font-semibold rounded-lg transition duration-150 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                        </svg>
+                        Ganti Password
+                    </button>
+                    
+                    <button onclick="handleLogout()" 
+                        class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition duration-150 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Keluar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="change-password-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center z-[100] p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm">
+                <div class="p-6 border-b flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800">Ganti Password</h3>
+                    <button type="button" onclick="closeChangePasswordModal()" class="text-gray-500 hover:text-gray-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <form id="change-password-form" class="p-6">
+                    <div id="password-error" class="hidden bg-red-100 text-red-700 px-4 py-2 rounded-lg mb-4 text-sm"></div>
+                    <div class="mb-4">
+                        <label for="new-password" class="block text-sm font-medium text-gray-700">Password Baru</label>
+                        <input type="password" id="new-password" name="new-password" required minlength="6" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="mb-6">
+                        <label for="confirm-password" class="block text-sm font-medium text-gray-700">Konfirmasi Password</label>
+                        <input type="password" id="confirm-password" name="confirm-password" required minlength="6" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <button type="submit" id="submit-password-change" class="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                        Simpan Password Baru
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div id="manual-reg-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-gray-800">Daftar Pasien Manual</h3>
+                    <button type="button" onclick="hideManualRegistrationModal()" class="text-gray-500 hover:text-gray-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <form id="manual-reg-form" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="col-span-full">
+                        <h4 class="text-lg font-semibold text-indigo-600 mb-3 border-b pb-1">Data Pasien</h4>
+                    </div>
+                    
+                    <div>
+                        <label for="nama_pasien" class="block text-sm font-medium text-gray-700">Nama Pasien Lengkap <span class="text-red-500">*</span></label>
+                        <input type="text" id="nama_pasien" name="nama_pasien" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="nik" class="block text-sm font-medium text-gray-700">Nomor Induk Kependudukan (NIK) <span class="text-red-500">*</span></label>
+                        <input type="number" id="nik" name="nik" required minlength="16" maxlength="16" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label for="tanggal_lahir" class="block text-sm font-medium text-gray-700">Tanggal Lahir <span class="text-red-500">*</span></label>
+                        <input type="date" id="tanggal_lahir" name="tanggal_lahir" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="jenis_kelamin" class="block text-sm font-medium text-gray-700">Jenis Kelamin <span class="text-red-500">*</span></label>
+                        <select id="jenis_kelamin" name="jenis_kelamin" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Pilih</option>
+                            <option value="Laki-laki">Laki-laki</option>
+                            <option value="Perempuan">Perempuan</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="kepesertaan" class="block text-sm font-medium text-gray-700">Kepesertaan <span class="text-red-500">*</span></label>
+                        <select id="kepesertaan" name="kepesertaan" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Pilih</option>
+                            <option value="Umum">Umum</option>
+                            <option value="BPJS">BPJS</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="nomor_asuransi" class="block text-sm font-medium text-gray-700">Nomor Asuransi/BPJS</label>
+                        <input type="text" id="nomor_asuransi" name="nomor_asuransi" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div class="col-span-full mt-4">
+                        <label for="keluhan_pasien" class="block text-sm font-medium text-gray-700">Keluhan Utama Pasien (Opsional)</label>
+                        <textarea id="keluhan_pasien" name="keluhan_pasien" rows="2" placeholder="Contoh: Batuk berdahak, demam tinggi sejak 2 hari yang lalu" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                    </div>
+
+                    <div class="col-span-full mt-4">
+                        <h4 class="text-lg font-semibold text-indigo-600 mb-3 border-b pb-1">Data Kontak & Alamat</h4>
+                    </div>
+
+                    <div>
+                        <label for="nomor_hp" class="block text-sm font-medium text-gray-700">Nomor HP Pasien (Opsional)</label>
+                        <input type="number" id="nomor_hp" name="nomor_hp" placeholder="Contoh: 62812xxxx" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label for="nama_keluarga" class="block text-sm font-medium text-gray-700">Nama Kontak Keluarga (Opsional)</label>
+                        <input type="text" id="nama_keluarga" name="nama_keluarga" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    
+                    <div class="col-span-full">
+                        <label for="alamat_desa" class="block text-sm font-medium text-gray-700">Alamat Desa/Kelurahan</label>
+                        <input type="text" id="alamat_desa" name="alamat_desa" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label for="alamat_dusun" class="block text-sm font-medium text-gray-700">Alamat Dusun/Jalan</label>
+                        <input type="text" id="alamat_dusun" name="alamat_dusun" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label for="alamat_rtrw" class="block text-sm font-medium text-gray-700">RT/RW</label>
+                        <input type="text" id="alamat_rtrw" name="alamat_rtrw" placeholder="Contoh: 001/002" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label for="pekerjaan" class="block text-sm font-medium text-gray-700">Pekerjaan</label>
+                        <input type="text" id="pekerjaan" name="pekerjaan" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label for="agama" class="block text-sm font-medium text-gray-700">Agama</label>
+                        <input type="text" id="agama" name="agama" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    
+                    
+                    <div class="col-span-full flex justify-end space-x-3 pt-4 border-t mt-4">
+                        <button type="button" onclick="hideManualRegistrationModal()" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-150">Batal</button>
+                        <button type="submit" id="submit-manual-reg" class="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition duration-150">
+                            <span id="submit-text">Daftarkan & Ambil Antrian</span>
+                            <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="add-user-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center z-[100] p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+                <div class="p-6 border-b flex justify-between items-center bg-green-600 text-white">
+                    <h3 class="text-xl font-bold">Tambah Pengguna Petugas Baru</h3>
+                    <button type="button" onclick="closeAddUserModal()" class="text-white hover:text-gray-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                
+                <form id="add-user-form" class="p-6">
+                    <div id="add-user-error" class="hidden bg-red-100 text-red-700 px-4 py-2 rounded-lg mb-4 text-sm"></div>
+
+                    <div class="mb-4">
+                        <label for="new-user-name" class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
+                        <input type="text" id="new-user-name" name="name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="new-user-email" class="block text-sm font-medium text-gray-700">Email (Login ID)</label>
+                        <input type="email" id="new-user-email" name="email" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="new-user-password" class="block text-sm font-medium text-gray-700">Password Sementara</label>
+                        <input type="password" id="new-user-password" name="password" required minlength="6" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="new-user-role" class="block text-sm font-medium text-gray-700">Peran (Role)</label>
+                        <select id="new-user-role" name="role" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                            <option value="operator">Operator (Akses Terbatas)</option>
+                            <option value="admin">Admin (Akses Penuh)</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" id="submit-new-user-btn" class="w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition">
+                        <span id="submit-user-text">Daftarkan Pengguna</span>
+                        <span id="submit-user-spinner" class="hidden animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full mx-auto"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+            </div>
+
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <script type="module" src="pengaturan.module.js"></script>
+    <script type="module" src="dashboard.client.js"></script>
+
+    <script>
+        // Menggunakan USER_STORAGE_KEY yang dideklarasikan di Authentication Guard
+        
+        /**
+         * 1. Fungsi Logout: Menghapus sesi pengguna dan mengalihkan
+         */
+        function handleLogout() {
+            if (confirm("Apakah Anda yakin ingin keluar dari sesi ini?")) {
+                localStorage.removeItem(USER_STORAGE_KEY); 
+                window.location.href = 'login.html'; 
+            }
+        }
+        window.handleLogout = handleLogout; // Pastikan fungsi ini tersedia secara global
+
+        /**
+         * 2. Fungsi Load User Data: Membaca data dari Local Storage dan menampilkan di header
+         */
+        function loadUserData() {
+            const userDisplayElement = document.getElementById('user-display-name'); 
+            const userDataString = localStorage.getItem(USER_STORAGE_KEY); 
+            
+            if (userDataString) {
+                try {
+                    const userData = JSON.parse(userDataString);
+                    
+                    if (userData.name) { 
+                        userDisplayElement.textContent = userData.name;
+                    } else if (userData.email) {
+                        userDisplayElement.textContent = userData.email.split('@')[0];
+                    } else if (userData.displayName) {
+                        userDisplayElement.textContent = userData.displayName;
+                    }
+                } catch (e) {
+                    userDisplayElement.textContent = "Petugas Error";
+                }
+            } else {
+                userDisplayElement.textContent = "Petugas"; 
+            }
+        }
+
+        /**
+         * 3. Fungsi Toggle Sidebar (Khusus Layout Mobile)
+         */
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const mainContent = document.querySelector('main');
+            
+            sidebar.classList.toggle('sidebar-visible');
+            mainContent.classList.toggle('sidebar-visible');
+            
+            if (sidebar.classList.contains('sidebar-visible')) {
+                overlay.classList.remove('hidden');
+                overlay.style.display = 'block'; 
+            } else {
+                overlay.classList.add('hidden');
+                overlay.style.display = 'none'; 
+            }
+        }
+        window.toggleSidebar = toggleSidebar;
+
+        /**
+         * 4. Fungsi Menampilkan Modal Ganti Password 
+         */
+        function showChangePasswordModal(e) {
+            e.preventDefault();
+            
+            const profileDetailModal = document.getElementById('profile-detail-modal');
+            if (profileDetailModal) {
+                profileDetailModal.classList.add('hidden');
+                profileDetailModal.style.display = 'none';
+            }
+            
+            const modal = document.getElementById('change-password-modal');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+
+            document.getElementById('change-password-form').reset();
+            const errorDiv = document.getElementById('password-error');
+            errorDiv.classList.add('hidden');
+            errorDiv.textContent = '';
+            
+            const form = document.getElementById('change-password-form');
+            if (window.handleChangePassword) {
+                 form.onsubmit = window.handleChangePassword;
+            } else {
+                 console.warn("window.handleChangePassword belum dimuat dari dashboard.client.js");
+            }
+        }
+
+        /**
+         * 5. Fungsi menutup Modal Ganti Password
+         */
+        window.closeChangePasswordModal = () => {
+            const modal = document.getElementById('change-password-modal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+
+        /**
+         * 6. Fungsi menutup Modal Profile Detail
+         */
+        window.closeProfileDetailModal = () => {
+            const modal = document.getElementById('profile-detail-modal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+        
+        // --- START: KODE TAMBAH PENGGUNA HELPER ---
+
+        window.showAddUserModal = (userData = null) => {
+            const modal = document.getElementById('add-user-modal');
+            const form = document.getElementById('add-user-form');
+            const title = modal.querySelector('h3');
+            
+            form.reset(); 
+
+            if (userData && userData.id) {
+                title.textContent = "Edit Pengguna Petugas";
+                form.setAttribute('data-user-id', userData.id); 
+                document.getElementById('new-user-name').value = userData.name || '';
+                document.getElementById('new-user-email').value = userData.email || '';
+                document.getElementById('new-user-role').value = userData.role || 'operator';
+                document.getElementById('new-user-password').value = ''; 
+                document.getElementById('new-user-password').placeholder = 'Kosongkan jika tidak ingin ganti password';
+                document.getElementById('submit-user-text').textContent = "Simpan Perubahan";
+                document.getElementById('new-user-email').disabled = true; 
+            } else {
+                title.textContent = "Tambah Pengguna Petugas Baru";
+                form.removeAttribute('data-user-id');
+                document.getElementById('new-user-email').disabled = false;
+                document.getElementById('new-user-password').placeholder = '';
+                document.getElementById('submit-user-text').textContent = "Daftarkan Pengguna";
+            }
+
+            document.getElementById('add-user-error').classList.add('hidden');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+        };
+
+        window.closeAddUserModal = () => {
+            const modal = document.getElementById('add-user-modal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        };
+
+        // --- END: KODE TAMBAH PENGGUNA HELPER ---
+
+
+        /**
+         * 7. Panggil loadUserData saat DOM selesai dimuat
+         */
+        document.addEventListener('DOMContentLoaded', loadUserData);
+        
+        // --- Menghubungkan Form Submission ke Logic Firebase (Tambahkan/Edit) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('add-user-form');
+            if (form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    const name = document.getElementById('new-user-name').value;
+                    const email = document.getElementById('new-user-email').value;
+                    const password = document.getElementById('new-user-password').value;
+                    const role = document.getElementById('new-user-role').value;
+                    const uidToEdit = form.getAttribute('data-user-id');
+
+                    const errorDiv = document.getElementById('add-user-error');
+                    const submitText = document.getElementById('submit-user-text');
+                    const submitSpinner = document.getElementById('submit-user-spinner');
+
+                    submitText.classList.add('hidden');
+                    submitSpinner.classList.remove('hidden');
+                    errorDiv.classList.add('hidden');
+
+                    let success = false;
+                    
+                    if (uidToEdit) {
+                        success = await window.submitEditUser(uidToEdit, name, password, role);
+                    } else {
+                        success = await window.submitNewUser(name, email, password, role);
+                    }
+
+                    submitText.classList.remove('hidden');
+                    submitSpinner.classList.add('hidden');
+                    
+                    if (success) {
+                        window.closeAddUserModal();
+                    } else {
+                        errorDiv.classList.remove('hidden');
+                        errorDiv.textContent = 'Gagal menyimpan. Cek konsol untuk detail error Firebase.';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

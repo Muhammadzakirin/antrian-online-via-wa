@@ -1,0 +1,15 @@
+# Dependencies
+/node_modules
+/package-lock.json
+
+# Kunci Sensitif (TIDAK BOLEH DIUNGGAH KE GITHUB)
+/serviceAccountKey.json
+
+# Data Sesi WhatsApp
+/.wwebjs_auth
+/.wwebjs_cache
+/wa_session.json
+
+# File Log atau Lainnya
+npm-debug.log*
+.log
